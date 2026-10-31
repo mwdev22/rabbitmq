@@ -67,8 +67,7 @@ func (f *fakeChannel) snapshot() []published {
 	return append([]published(nil), f.published...)
 }
 
-// fakeSource hands out consume channels in order, then blocks until ctx is done.
-// exhausted is closed once the consume channels run out, i.e. Run is idle
+// exhausted is closed once consume channels run out, i.e. Run is idle
 type fakeSource struct {
 	mu        sync.Mutex
 	consume   []*fakeChannel

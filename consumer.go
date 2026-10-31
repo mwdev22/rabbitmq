@@ -11,10 +11,6 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// Consumer consumes a queue with manual acks (at-least-once). failed messages
-// go to <queue>.retry (ttl, then back to the queue) until WithMaxRetries runs
-// out, then to <queue>.dlq. a message is acked only after the handler
-// succeeded or the message was confirmed in retry/dlq
 type Consumer struct {
 	src  channelSource
 	h    Handler
@@ -54,10 +50,6 @@ func newConsumer(src channelSource, h Handler, opts ...ConsumerOption) (*Consume
 	}, nil
 }
 
-// Run consumes until ctx is cancelled, then lets in-flight handlers finish
-// (bounded by WithShutdownTimeout), acks them and returns nil. a lost
-// connection is not an error: Run resubscribes once Conn reconnects. it returns
-// an error wrapping ErrDLQ when a message could not be moved to retry/dlq
 func (c *Consumer) Run(ctx context.Context) error {
 	for {
 		ch, err := c.src.channel(ctx, false)
@@ -98,7 +90,7 @@ func (c *Consumer) Run(ctx context.Context) error {
 	}
 }
 
-// Close releases the channel used for retry/dlq publishes. it does not close the Conn
+// does not close the Conn
 func (c *Consumer) Close() error {
 	return c.pub.Close()
 }
@@ -119,8 +111,7 @@ func (c *Consumer) subscribe(ch channel) (<-chan amqp.Delivery, error) {
 	return d, nil
 }
 
-// consume runs the workers until deliveries closes, ctx is done or one of them
-// fails. a failure stops the others from taking new messages, in-flight ones finish
+// first failure stops new pulls, in-flight handlers still finish
 func (c *Consumer) consume(ctx context.Context, deliveries <-chan amqp.Delivery) error {
 	wctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -178,7 +169,6 @@ func (c *Consumer) handle(ctx context.Context, d amqp.Delivery) error {
 	return c.ack(d)
 }
 
-// reroute builds the copy that goes to the retry queue or the dlq
 func (c *Consumer) reroute(d amqp.Delivery, m Message, herr error) (string, amqp.Publishing) {
 	headers := make(amqp.Table, len(d.Headers)+4)
 	for k, v := range d.Headers {
@@ -230,8 +220,7 @@ func (c *Consumer) ack(d amqp.Delivery) error {
 	return fmt.Errorf("rabbitmq: ack: %w", err)
 }
 
-// shutdownCtx detaches the handler from ctx cancellation so in-flight work can
-// finish, but cancels it timeout after ctx is done
+// detached from ctx so in-flight work can finish, cancelled timeout after ctx is done
 func shutdownCtx(ctx context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
 	hctx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	stop := context.AfterFunc(ctx, func() {

@@ -19,8 +19,7 @@ const (
 	HeaderOriginalKey      = "x-original-routing-key"
 )
 
-// Message is a delivery handed to a Handler. ID is stable across redeliveries
-// (the "id" header, else the amqp MessageId), use it to dedupe
+// stable across redeliveries (id header, else amqp MessageId), use it to dedupe
 type Message struct {
 	ID      string
 	Key     string
@@ -33,8 +32,7 @@ type Message struct {
 	RetryCount  int
 }
 
-// Handler processes a message. nil acks it, Permanent(err) sends it straight to
-// the dlq, any other error is retried up to WithMaxRetries times.
+// nil acks, Permanent(err) goes straight to the dlq, other errors are retried
 // delivery is at-least-once, so handlers must be idempotent
 type Handler func(ctx context.Context, m Message) error
 
@@ -43,7 +41,6 @@ type permanentError struct{ err error }
 func (e permanentError) Error() string { return e.err.Error() }
 func (e permanentError) Unwrap() error { return e.err }
 
-// Permanent marks err as not retryable
 func Permanent(err error) error {
 	if err == nil {
 		return nil

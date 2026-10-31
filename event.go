@@ -7,8 +7,7 @@ import (
 	"time"
 )
 
-// Event is the envelope our producers publish. its ID becomes Message.ID on the
-// consumer side
+// its ID becomes Message.ID on the consumer side
 type Event struct {
 	ID         string          `json:"id"`
 	Type       string          `json:"type"`
@@ -31,7 +30,6 @@ func NewEvent(typ string, version int, payload any) (Event, error) {
 	}, nil
 }
 
-// newID returns a random uuid v4
 func newID() string {
 	var b [16]byte
 	_, _ = rand.Read(b[:])

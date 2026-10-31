@@ -12,8 +12,6 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// Producer publishes persistent, mandatory messages on a confirm-mode channel.
-// Publish returns only after the broker acked the message
 type Producer struct {
 	src  channelSource
 	opts ProducerOptions
@@ -38,8 +36,7 @@ func newProducer(src channelSource, o ProducerOptions) *Producer {
 	return &Producer{src: src, opts: o}
 }
 
-// Publish sends body to exchange with routing key. headers["id"] becomes the
-// message id, one is generated when it is missing
+// headers["id"] becomes the message id, generated when missing
 func (p *Producer) Publish(ctx context.Context, exchange, key string, body []byte, headers map[string]string) error {
 	t := make(amqp.Table, len(headers)+1)
 	for k, v := range headers {
@@ -87,8 +84,7 @@ func (p *Producer) publish(ctx context.Context, exchange, key string, msg amqp.P
 	defer cancel()
 
 	err := p.publishOnce(ctx, exchange, key, msg)
-	// a closed channel never sent the message, so one retry on a fresh channel
-	// covers a reconnect without risking much duplication
+	// a closed channel never sent the message, one retry on a fresh channel covers a reconnect
 	if errors.Is(err, amqp.ErrClosed) {
 		err = p.publishOnce(ctx, exchange, key, msg)
 	}
@@ -115,7 +111,7 @@ func (p *Producer) publishOnce(ctx context.Context, exchange, key string, msg am
 	return nil
 }
 
-// Close closes the producer's channel, not the Conn
+// closes only the producer's channel, not the Conn
 func (p *Producer) Close() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()

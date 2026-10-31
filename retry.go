@@ -5,8 +5,7 @@ import (
 	"time"
 )
 
-// backoff returns base*2^attempt capped at max, with equal jitter so
-// reconnecting clients don't stampede the broker
+// equal jitter so reconnecting clients don't stampede the broker
 func backoff(attempt int, base, max time.Duration) time.Duration {
 	if base <= 0 {
 		return 0

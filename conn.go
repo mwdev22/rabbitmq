@@ -9,14 +9,12 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// channel is the subset of an amqp channel the producer and consumer use, kept
-// small so tests can swap in fakes
+// kept small so tests can swap in fakes
 type channel interface {
 	Qos(prefetch int) error
 	declare(t topology) error
 	Consume(queue, tag string) (<-chan amqp.Delivery, error)
 	Cancel(tag string) error
-	// Publish blocks until the broker confirms the message
 	Publish(ctx context.Context, exchange, key string, msg amqp.Publishing) error
 	Close() error
 }
@@ -25,8 +23,6 @@ type channelSource interface {
 	channel(ctx context.Context, confirm bool) (channel, error)
 }
 
-// Conn is an amqp connection that redials with backoff when the broker drops
-// it. producers and consumers ask it for fresh channels after a reconnect
 type Conn struct {
 	url  string
 	opts ConnOptions
@@ -39,8 +35,7 @@ type Conn struct {
 	closeOnce sync.Once
 }
 
-// Dial connects to url. the first dial fails fast, later drops are retried
-// in the background until Close
+// first dial fails fast, later drops are redialled in the background
 func Dial(url string, opts ...ConnOption) (*Conn, error) {
 	o := defaultConnOptions()
 	for _, opt := range opts {
@@ -118,7 +113,6 @@ func (c *Conn) redial() *amqp.Connection {
 	}
 }
 
-// channel opens a channel, waiting for a reconnect if the connection is down
 func (c *Conn) channel(ctx context.Context, confirm bool) (channel, error) {
 	for attempt := 0; ; attempt++ {
 		select {
@@ -195,8 +189,7 @@ func (c *amqpChannel) Close() error {
 	return c.ch.Close()
 }
 
-// Publish publishes with mandatory set and waits for the confirm. the broker
-// sends basic.return before the ack, so a return is visible once the ack lands
+// basic.return arrives before the ack, so a return is visible once the ack lands
 func (c *amqpChannel) Publish(ctx context.Context, exchange, key string, msg amqp.Publishing) error {
 	if c.returns == nil {
 		return fmt.Errorf("rabbitmq: channel not in confirm mode")

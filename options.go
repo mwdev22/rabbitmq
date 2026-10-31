@@ -15,8 +15,7 @@ var (
 	ErrConnClosed     = errors.New("rabbitmq: connection closed")
 	ErrNack           = errors.New("rabbitmq: publish nacked by broker")
 	ErrUnroutable     = errors.New("rabbitmq: message unroutable")
-	// ErrDLQ is returned by Run when a message could not be handed to the retry
-	// queue or the dlq. the message was nacked with requeue, so it isn't lost
+	// the message was nacked with requeue, so it isn't lost
 	ErrDLQ = errors.New("rabbitmq: retry/dlq publish failed")
 )
 
@@ -110,7 +109,6 @@ func (o ConsumerOptions) validate() error {
 	return nil
 }
 
-// WithExchange binds the queue to exchange (declared with kind, "topic" if empty).
 // without it the queue is consumed as is, with no binding
 func WithExchange(name, kind string) ConsumerOption {
 	return func(o *ConsumerOptions) {
@@ -129,13 +127,11 @@ func WithRoutingKey(key string) ConsumerOption {
 	return func(o *ConsumerOptions) { o.RoutingKey = key }
 }
 
-// WithRetryTTL sets how long a failed message waits in <queue>.retry before it
-// goes back to the main queue
 func WithRetryTTL(d time.Duration) ConsumerOption {
 	return func(o *ConsumerOptions) { o.RetryTTL = d }
 }
 
-// WithDeclare(false) skips topology declaration when infra owns it
+// false when infra owns the topology
 func WithDeclare(declare bool) ConsumerOption {
 	return func(o *ConsumerOptions) { o.Declare = declare }
 }
@@ -144,7 +140,7 @@ func WithPrefetch(n int) ConsumerOption {
 	return func(o *ConsumerOptions) { o.Prefetch = n }
 }
 
-// WithWorkers sets concurrent handlers. with n > 1 ordering is not preserved
+// ordering is not preserved with n > 1
 func WithWorkers(n int) ConsumerOption {
 	return func(o *ConsumerOptions) { o.Workers = n }
 }
@@ -153,9 +149,7 @@ func WithMaxRetries(n int) ConsumerOption {
 	return func(o *ConsumerOptions) { o.MaxRetries = n }
 }
 
-// WithBackoff makes the retry delay grow per attempt (base*2^n, jittered, capped
-// at max) via per-message expiration. the retry queue ttl still caps it, so keep
-// max <= WithRetryTTL. off by default: every retry waits the retry ttl
+// grows the retry delay per attempt via per-message expiration, capped by the retry ttl, off by default
 func WithBackoff(base, max time.Duration) ConsumerOption {
 	return func(o *ConsumerOptions) { o.BackoffBase, o.BackoffMax = base, max }
 }

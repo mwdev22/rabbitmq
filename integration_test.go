@@ -55,7 +55,6 @@ func newITEnv(t *testing.T) itEnv {
 	return env
 }
 
-// startConsumer runs a consumer and waits until its topology exists
 func (e itEnv) startConsumer(t *testing.T, h Handler, opts ...ConsumerOption) (stop func() error) {
 	t.Helper()
 	opts = append([]ConsumerOption{WithExchange(e.exchange, "topic"), WithQueue(e.queue), WithRoutingKey("order.*")}, opts...)

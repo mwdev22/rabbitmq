@@ -29,7 +29,6 @@ func delivery(a *fakeAcker, tag uint64, id string, retry int) amqp.Delivery {
 	}
 }
 
-// runUntilIdle runs c until it has drained its channels, then cancels ctx
 func runUntilIdle(t *testing.T, c *Consumer, src *fakeSource) error {
 	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
