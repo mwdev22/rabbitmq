@@ -13,6 +13,7 @@ import (
 // small so tests can swap in fakes
 type channel interface {
 	Qos(prefetch int) error
+	declare(t topology) error
 	Consume(queue, tag string) (<-chan amqp.Delivery, error)
 	Cancel(tag string) error
 	// Publish blocks until the broker confirms the message
