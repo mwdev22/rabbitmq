@@ -27,5 +27,8 @@ func WrapErr(op string, err error) error {
 	if err == nil {
 		return nil
 	}
-	return &Error{Op: op, Err: err}
+	return &Error{
+		Op:  op,
+		Err: err,
+	}
 }
