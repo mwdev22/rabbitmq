@@ -1,5 +1,7 @@
 package rabbitmq
 
+import "fmt"
+
 const (
 	OpConfig    = "config"
 	OpDial      = "dial"
@@ -19,7 +21,7 @@ type Error struct {
 	Err error
 }
 
-func (e *Error) Error() string { return "rabbitmq: " + e.Op + ": " + e.Err.Error() }
+func (e *Error) Error() string { return fmt.Sprintf("rabbitmq: %s: %v", e.Op, e.Err) }
 
 func (e *Error) Unwrap() error { return e.Err }
 
