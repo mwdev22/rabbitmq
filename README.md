@@ -140,6 +140,20 @@ With `WithWorkers(1)` and a single consumer, messages are handled in queue order
 
 `WithBackoff` uses per-message expiration. RabbitMQ only expires messages at the head of a queue, so a short delay can wait behind a longer one in `<queue>.retry`; the retry ttl still caps the total.
 
+## errors
+
+Every error returned by this package is a `*rabbitmq.Error{Op, Err}`, with a message like `rabbitmq: dlq: publish failed for m-1: ...`. Use `errors.As` to tell the broker apart and `errors.Is` to find the kind:
+
+```go
+var re *rabbitmq.Error
+switch {
+case errors.Is(err, rabbitmq.ErrDLQ): // alert, exit non-zero
+case errors.As(err, &re):            // 503 / codes.Unavailable, label op=re.Op
+}
+```
+
+Ops: `OpConfig`, `OpDial`, `OpChannel`, `OpSubscribe`, `OpPublish`, `OpAck`, `OpRetry`, `OpDLQ`, `OpClose`, `OpEvent`. Use `rabbitmq.WrapErr(op, err)` to tag your own broker-side failures the same way.
+
 ## tests
 
 ```sh

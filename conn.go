@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -43,7 +44,7 @@ func Dial(url string, opts ...ConnOption) (*Conn, error) {
 	}
 	ac, err := amqp.Dial(url)
 	if err != nil {
-		return nil, fmt.Errorf("rabbitmq: dial: %w", err)
+		return nil, WrapErr(OpDial, err)
 	}
 	c := &Conn{url: url, opts: o, ready: make(chan struct{}), done: make(chan struct{})}
 	c.setConn(ac)
@@ -61,7 +62,7 @@ func (c *Conn) Close() error {
 			err = c.conn.Close()
 		}
 	})
-	return err
+	return WrapErr(OpClose, err)
 }
 
 func (c *Conn) setConn(ac *amqp.Connection) {
@@ -165,7 +166,7 @@ func openChannel(ac *amqp.Connection, confirm bool) (*amqpChannel, error) {
 	if confirm {
 		if err := ch.Confirm(false); err != nil {
 			_ = ch.Close()
-			return nil, fmt.Errorf("rabbitmq: confirm mode: %w", err)
+			return nil, fmt.Errorf("confirm mode: %w", err)
 		}
 		// buffered so the connection reader never blocks on it, callers publish one at a time
 		c.returns = ch.NotifyReturn(make(chan amqp.Return, 1))
@@ -192,7 +193,7 @@ func (c *amqpChannel) Close() error {
 // basic.return arrives before the ack, so a return is visible once the ack lands
 func (c *amqpChannel) Publish(ctx context.Context, exchange, key string, msg amqp.Publishing) error {
 	if c.returns == nil {
-		return fmt.Errorf("rabbitmq: channel not in confirm mode")
+		return errors.New("channel not in confirm mode")
 	}
 	select {
 	case <-c.returns:

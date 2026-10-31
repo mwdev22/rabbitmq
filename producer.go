@@ -23,7 +23,7 @@ type Producer struct {
 
 func NewProducer(conn *Conn, opts ...ProducerOption) (*Producer, error) {
 	if conn == nil {
-		return nil, ErrMissingConn
+		return nil, WrapErr(OpConfig, ErrMissingConn)
 	}
 	o := defaultProducerOptions()
 	for _, opt := range opts {
@@ -47,21 +47,21 @@ func (p *Producer) Publish(ctx context.Context, exchange, key string, body []byt
 		id = newID()
 		t[HeaderID] = id
 	}
-	return p.publish(ctx, exchange, key, amqp.Publishing{
+	return WrapErr(OpPublish, p.publish(ctx, exchange, key, amqp.Publishing{
 		Headers:      t,
 		MessageId:    id,
 		DeliveryMode: amqp.Persistent,
 		Timestamp:    time.Now().UTC(),
 		Body:         body,
-	})
+	}))
 }
 
 func (p *Producer) PublishEvent(ctx context.Context, exchange, key string, e Event) error {
 	body, err := json.Marshal(e)
 	if err != nil {
-		return fmt.Errorf("rabbitmq: marshal event: %w", err)
+		return WrapErr(OpEvent, fmt.Errorf("marshal: %w", err))
 	}
-	return p.publish(ctx, exchange, key, amqp.Publishing{
+	return WrapErr(OpPublish, p.publish(ctx, exchange, key, amqp.Publishing{
 		Headers: amqp.Table{
 			HeaderID:  e.ID,
 			"type":    e.Type,
@@ -73,7 +73,7 @@ func (p *Producer) PublishEvent(ctx context.Context, exchange, key string, e Eve
 		DeliveryMode: amqp.Persistent,
 		Timestamp:    e.OccurredAt,
 		Body:         body,
-	})
+	}))
 }
 
 func (p *Producer) publish(ctx context.Context, exchange, key string, msg amqp.Publishing) error {
@@ -89,7 +89,7 @@ func (p *Producer) publish(ctx context.Context, exchange, key string, msg amqp.P
 		err = p.publishOnce(ctx, exchange, key, msg)
 	}
 	if err != nil {
-		return fmt.Errorf("rabbitmq: publish to %q key %q: %w", exchange, key, err)
+		return fmt.Errorf("to %q key %q: %w", exchange, key, err)
 	}
 	return nil
 }
@@ -120,5 +120,5 @@ func (p *Producer) Close() error {
 	}
 	err := p.ch.Close()
 	p.ch = nil
-	return err
+	return WrapErr(OpClose, err)
 }
