@@ -13,6 +13,10 @@ const (
 	HeaderRetryCount    = "x-retry-count"
 	HeaderError         = "x-error"
 	HeaderOriginalQueue = "x-original-queue"
+	// retries travel through the default exchange, these keep the original
+	// routing so Message.Key/Exchange stay the same on every attempt
+	HeaderOriginalExchange = "x-original-exchange"
+	HeaderOriginalKey      = "x-original-routing-key"
 )
 
 // Message is a delivery handed to a Handler. ID is stable across redeliveries
@@ -61,12 +65,16 @@ func toMessage(d amqp.Delivery, queue string) Message {
 	if id == "" {
 		id = d.MessageId
 	}
+	key, exchange := d.RoutingKey, d.Exchange
+	if k, ok := headers[HeaderOriginalKey]; ok {
+		key, exchange = k, headers[HeaderOriginalExchange]
+	}
 	return Message{
 		ID:          id,
-		Key:         d.RoutingKey,
+		Key:         key,
 		Body:        d.Body,
 		Headers:     headers,
-		Exchange:    d.Exchange,
+		Exchange:    exchange,
 		Queue:       queue,
 		Redelivered: d.Redelivered,
 		RetryCount:  retryCount(d.Headers),
