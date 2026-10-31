@@ -6,7 +6,10 @@ import (
 )
 
 func TestTopologyQueues(t *testing.T) {
-	top := newTopology(ConsumerOptions{Queue: "billing.orders", RetryTTL: 5 * time.Second})
+	top := newTopology(ConsumerOptions{
+		Queue:    "billing.orders",
+		RetryTTL: 5 * time.Second,
+	})
 	got := map[string]queueSpec{}
 	for _, q := range top.queues() {
 		got[q.name] = q

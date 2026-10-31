@@ -45,7 +45,12 @@ func Dial(url string, opts ...ConnOption) (*Conn, error) {
 	if err != nil {
 		return nil, fmt.Errorf("rabbitmq: dial: %w", err)
 	}
-	c := &Conn{url: url, opts: o, ready: make(chan struct{}), done: make(chan struct{})}
+	c := &Conn{
+		url:   url,
+		opts:  o,
+		ready: make(chan struct{}),
+		done:  make(chan struct{}),
+	}
 	c.setConn(ac)
 	go c.watch(ac)
 	return c, nil

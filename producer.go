@@ -33,7 +33,10 @@ func NewProducer(conn *Conn, opts ...ProducerOption) (*Producer, error) {
 }
 
 func newProducer(src channelSource, o ProducerOptions) *Producer {
-	return &Producer{src: src, opts: o}
+	return &Producer{
+		src:  src,
+		opts: o,
+	}
 }
 
 // headers["id"] becomes the message id, generated when missing
