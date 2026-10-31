@@ -59,17 +59,17 @@ func (t topology) queues() []queueSpec {
 func (c *amqpChannel) declare(t topology) error {
 	if t.exchange != "" {
 		if err := c.ch.ExchangeDeclare(t.exchange, t.kind, true, false, false, false, nil); err != nil {
-			return fmt.Errorf("rabbitmq: declare exchange %q: %w", t.exchange, err)
+			return fmt.Errorf("declare exchange %q: %w", t.exchange, err)
 		}
 	}
 	for _, q := range t.queues() {
 		if _, err := c.ch.QueueDeclare(q.name, true, false, false, false, q.args); err != nil {
-			return fmt.Errorf("rabbitmq: declare queue %q: %w", q.name, err)
+			return fmt.Errorf("declare queue %q: %w", q.name, err)
 		}
 	}
 	if t.exchange != "" {
 		if err := c.ch.QueueBind(t.queue, t.routingKey, t.exchange, false, nil); err != nil {
-			return fmt.Errorf("rabbitmq: bind %q to %q: %w", t.queue, t.exchange, err)
+			return fmt.Errorf("bind %q to %q: %w", t.queue, t.exchange, err)
 		}
 	}
 	return nil

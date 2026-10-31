@@ -2,7 +2,6 @@ package rabbitmq
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -29,7 +28,7 @@ func Dial(url string, opts ...ConnOption) (*Conn, error) {
 	}
 	ac, err := amqp.Dial(url)
 	if err != nil {
-		return nil, fmt.Errorf("rabbitmq: dial: %w", err)
+		return nil, WrapErr(OpDial, err)
 	}
 	c := &Conn{
 		url:   url,
@@ -52,7 +51,7 @@ func (c *Conn) Close() error {
 			err = c.conn.Close()
 		}
 	})
-	return err
+	return WrapErr(OpClose, err)
 }
 
 func (c *Conn) channel(ctx context.Context, confirm bool) (channel, error) {

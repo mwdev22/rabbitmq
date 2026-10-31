@@ -8,15 +8,15 @@ import (
 )
 
 var (
-	ErrMissingConn    = errors.New("rabbitmq: missing connection")
-	ErrMissingHandler = errors.New("rabbitmq: missing handler")
-	ErrMissingQueue   = errors.New("rabbitmq: missing queue")
-	ErrInvalidOption  = errors.New("rabbitmq: invalid option")
-	ErrConnClosed     = errors.New("rabbitmq: connection closed")
-	ErrNack           = errors.New("rabbitmq: publish nacked by broker")
-	ErrUnroutable     = errors.New("rabbitmq: message unroutable")
+	ErrMissingConn    = errors.New("missing connection")
+	ErrMissingHandler = errors.New("missing handler")
+	ErrMissingQueue   = errors.New("missing queue")
+	ErrInvalidOption  = errors.New("invalid option")
+	ErrConnClosed     = errors.New("connection closed")
+	ErrNack           = errors.New("publish nacked by broker")
+	ErrUnroutable     = errors.New("message unroutable")
 	// the message was nacked with requeue, so it isn't lost
-	ErrDLQ = errors.New("rabbitmq: retry/dlq publish failed")
+	ErrDLQ = errors.New("publish failed")
 )
 
 type ConnOption func(*ConnOptions)

@@ -19,7 +19,7 @@ type Event struct {
 func NewEvent(typ string, version int, payload any) (Event, error) {
 	b, err := json.Marshal(payload)
 	if err != nil {
-		return Event{}, fmt.Errorf("rabbitmq: marshal payload: %w", err)
+		return Event{}, WrapErr(OpEvent, fmt.Errorf("marshal payload: %w", err))
 	}
 	return Event{
 		ID:         newID(),

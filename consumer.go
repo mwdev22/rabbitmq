@@ -22,21 +22,21 @@ type Consumer struct {
 
 func NewConsumer(conn *Conn, h Handler, opts ...ConsumerOption) (*Consumer, error) {
 	if conn == nil {
-		return nil, ErrMissingConn
+		return nil, WrapErr(OpConfig, ErrMissingConn)
 	}
 	return newConsumer(conn, h, opts...)
 }
 
 func newConsumer(src channelSource, h Handler, opts ...ConsumerOption) (*Consumer, error) {
 	if h == nil {
-		return nil, ErrMissingHandler
+		return nil, WrapErr(OpConfig, ErrMissingHandler)
 	}
 	o := defaultConsumerOptions()
 	for _, opt := range opts {
 		opt(&o)
 	}
 	if err := o.validate(); err != nil {
-		return nil, err
+		return nil, WrapErr(OpConfig, err)
 	}
 	po := defaultProducerOptions()
 	po.Logger = o.Logger
@@ -57,7 +57,7 @@ func (c *Consumer) Run(ctx context.Context) error {
 			if ctx.Err() != nil {
 				return nil
 			}
-			return err
+			return WrapErr(OpChannel, err)
 		}
 		deliveries, err := c.subscribe(ch)
 		if err != nil {
@@ -68,7 +68,7 @@ func (c *Consumer) Run(ctx context.Context) error {
 			if errors.Is(err, amqp.ErrClosed) {
 				continue
 			}
-			return err
+			return WrapErr(OpSubscribe, err)
 		}
 
 		err = c.consume(ctx, deliveries)
@@ -97,7 +97,7 @@ func (c *Consumer) Close() error {
 
 func (c *Consumer) subscribe(ch channel) (<-chan amqp.Delivery, error) {
 	if err := ch.Qos(c.opts.Prefetch); err != nil {
-		return nil, fmt.Errorf("rabbitmq: qos: %w", err)
+		return nil, fmt.Errorf("qos: %w", err)
 	}
 	if c.opts.Declare {
 		if err := ch.declare(c.top); err != nil {
@@ -106,7 +106,7 @@ func (c *Consumer) subscribe(ch channel) (<-chan amqp.Delivery, error) {
 	}
 	d, err := ch.Consume(c.top.queue, c.tag)
 	if err != nil {
-		return nil, fmt.Errorf("rabbitmq: consume %q: %w", c.top.queue, err)
+		return nil, fmt.Errorf("consume %q: %w", c.top.queue, err)
 	}
 	return d, nil
 }
@@ -164,7 +164,11 @@ func (c *Consumer) handle(ctx context.Context, d amqp.Delivery) error {
 	key, msg := c.reroute(d, m, herr)
 	if err := c.pub.publish(hctx, "", key, msg); err != nil {
 		_ = d.Nack(false, true)
-		return fmt.Errorf("%w: %s: %v", ErrDLQ, key, err)
+		op := OpDLQ
+		if key == c.top.retryQueue() {
+			op = OpRetry
+		}
+		return WrapErr(op, fmt.Errorf("%w for %s: %v", ErrDLQ, m.ID, err))
 	}
 	return c.ack(d)
 }
@@ -217,7 +221,7 @@ func (c *Consumer) ack(d amqp.Delivery) error {
 	if errors.Is(err, amqp.ErrClosed) {
 		return nil
 	}
-	return fmt.Errorf("rabbitmq: ack: %w", err)
+	return WrapErr(OpAck, err)
 }
 
 // detached from ctx so in-flight work can finish, cancelled timeout after ctx is done
