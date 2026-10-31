@@ -46,7 +46,7 @@ func newConsumer(src channelSource, h Handler, opts ...ConsumerOption) (*Consume
 		opts: o,
 		top:  newTopology(o),
 		pub:  newProducer(src, po),
-		tag:  "rabbitmq-" + newID(),
+		tag:  fmt.Sprintf("rabbitmq-%s", newID()),
 	}, nil
 }
 

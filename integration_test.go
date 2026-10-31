@@ -5,6 +5,7 @@ package rabbitmq
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"sync"
 	"testing"
@@ -41,13 +42,13 @@ func newITEnv(t *testing.T) itEnv {
 	env := itEnv{
 		conn:     conn,
 		prod:     prod,
-		exchange: "it." + suffix,
-		queue:    "it." + suffix + ".q",
+		exchange: fmt.Sprintf("it.%s", suffix),
+		queue:    fmt.Sprintf("it.%s.q", suffix),
 	}
 	t.Cleanup(func() {
 		if ac, err := amqp.Dial(integrationURL()); err == nil {
 			if ch, err := ac.Channel(); err == nil {
-				for _, q := range []string{env.queue, env.queue + ".retry", env.queue + ".dlq"} {
+				for _, q := range []string{env.queue, fmt.Sprintf("%s.retry", env.queue), fmt.Sprintf("%s.dlq", env.queue)} {
 					_, _ = ch.QueueDelete(q, false, false, false)
 				}
 				_ = ch.ExchangeDelete(env.exchange, false, false)

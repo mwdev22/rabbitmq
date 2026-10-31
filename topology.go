@@ -33,8 +33,8 @@ func newTopology(o ConsumerOptions) topology {
 	}
 }
 
-func (t topology) retryQueue() string { return t.queue + ".retry" }
-func (t topology) dlq() string        { return t.queue + ".dlq" }
+func (t topology) retryQueue() string { return fmt.Sprintf("%s.retry", t.queue) }
+func (t topology) dlq() string        { return fmt.Sprintf("%s.dlq", t.queue) }
 
 type queueSpec struct {
 	name string

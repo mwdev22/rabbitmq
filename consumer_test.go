@@ -84,7 +84,7 @@ func TestConsumerRun(t *testing.T) {
 			},
 			wantCalls: 2,
 			wantAcks:  []ackRecord{{tag: 1, ack: true}, {tag: 2, ack: true}},
-			wantPub:   []pubWant{{testQueue + ".retry", 1}},
+			wantPub:   []pubWant{{fmt.Sprintf("%s.retry", testQueue), 1}},
 		},
 		{
 			name:      "#3 - OK - transient exhausted → dlq + ack",
@@ -92,7 +92,7 @@ func TestConsumerRun(t *testing.T) {
 			handler:   func(int) error { return boom },
 			wantCalls: 1,
 			wantAcks:  []ackRecord{{tag: 1, ack: true}},
-			wantPub:   []pubWant{{testQueue + ".dlq", 3}},
+			wantPub:   []pubWant{{fmt.Sprintf("%s.dlq", testQueue), 3}},
 		},
 		{
 			name:      "#4 - OK - permanent → dlq without retry",
@@ -100,7 +100,7 @@ func TestConsumerRun(t *testing.T) {
 			handler:   func(int) error { return Permanent(boom) },
 			wantCalls: 1,
 			wantAcks:  []ackRecord{{tag: 1, ack: true}},
-			wantPub:   []pubWant{{testQueue + ".dlq", 0}},
+			wantPub:   []pubWant{{fmt.Sprintf("%s.dlq", testQueue), 0}},
 		},
 		{
 			name:      "#5 - FAIL - dlq publish fails → nack requeue, ErrDLQ",
