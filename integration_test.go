@@ -38,7 +38,12 @@ func newITEnv(t *testing.T) itEnv {
 		t.Fatal(err)
 	}
 	suffix := newID()[:8]
-	env := itEnv{conn: conn, prod: prod, exchange: "it." + suffix, queue: "it." + suffix + ".q"}
+	env := itEnv{
+		conn:     conn,
+		prod:     prod,
+		exchange: "it." + suffix,
+		queue:    "it." + suffix + ".q",
+	}
 	t.Cleanup(func() {
 		if ac, err := amqp.Dial(integrationURL()); err == nil {
 			if ch, err := ac.Channel(); err == nil {

@@ -78,7 +78,11 @@ type fakeSource struct {
 }
 
 func newFakeSource(pub []*fakeChannel, consume ...*fakeChannel) *fakeSource {
-	return &fakeSource{consume: consume, pub: pub, exhausted: make(chan struct{})}
+	return &fakeSource{
+		consume:   consume,
+		pub:       pub,
+		exhausted: make(chan struct{}),
+	}
 }
 
 func (s *fakeSource) channel(ctx context.Context, confirm bool) (channel, error) {
@@ -119,14 +123,22 @@ type fakeAcker struct {
 func (a *fakeAcker) Ack(tag uint64, multiple bool) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	a.acks = append(a.acks, ackRecord{tag: tag, ack: true, multiple: multiple})
+	a.acks = append(a.acks, ackRecord{
+		tag:      tag,
+		ack:      true,
+		multiple: multiple,
+	})
 	return nil
 }
 
 func (a *fakeAcker) Nack(tag uint64, multiple, requeue bool) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	a.acks = append(a.acks, ackRecord{tag: tag, requeue: requeue, multiple: multiple})
+	a.acks = append(a.acks, ackRecord{
+		tag:      tag,
+		requeue:  requeue,
+		multiple: multiple,
+	})
 	return nil
 }
 
